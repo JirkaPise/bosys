@@ -5,18 +5,18 @@
 
 // Zadání:
 // Program spustí tři druhy vláken simulující činnosti:
-// • zákazníci, kteří si rezervují vstupenky a následně je zaplatí,
-// • pokladník/účetní, který nejprve čeká na dokončení rezervací,
+// • zákazníci, kteří si rezervují vstupenky a následně je zaplatí,
+// • pokladník/účetní, který nejprve čeká na dokončení rezervací,
 //   následně vypíše tabulku rezervovaných lístků,
 //   pak zaúčtuje platby a nakonec odešle utržené peníze majiteli,
-// • majitel čeká na příjem peněz, vystaví stvrzenku a nakonec si něco koupí.
+// • majitel čeká na příjem peněz, vystaví stvrzenku a nakonec si něco koupí.
 //
 // Synchronizujte akce tak, aby na sebe korektně navazovaly bez zbytečného zdržování:
-// • synchronní spuštění všech vláken,
-// • všechny pokusy o rezervace musejí předcházet výpisu rezervací,
-// • zaslání tržby majiteli musí proběhnout až po všech platbách zákazníků,
-// • vydání účtenky až po předání tržby,
-// • přijetí účtenky až po jejím vydání.
+// • synchronní spuštění všech vláken,
+// • všechny pokusy o rezervace musejí předcházet výpisu rezervací,
+// • zaslání tržby majiteli musí proběhnout až po všech platbách zákazníků,
+// • vydání účtenky až po předání tržby,
+// • přijetí účtenky až po jejím vydání.
 //
 // Jednotlivé činnosti jsou reprezentovány příslušnými výpisy.
 //
@@ -139,7 +139,6 @@ void *cashier(void *arg) {
     sem_wait(&semCashier);
     printf(C_CASHIER "cashier:     got a receipt" C_NORMAL "\n");
     printf(C_CASHIER "cashier:     finished" C_NORMAL "\n");
-    sem_post(&semOwner);
     return NULL;
 }
 
@@ -151,7 +150,6 @@ void *owner(void *arg) {
     printf(C_OWNER "owner:       got money from the cashier" C_NORMAL "\n");
     printf(C_OWNER "owner:       sending receipt to the cashier" C_NORMAL "\n");
     sem_post(&semCashier);
-    sem_wait(&semOwner);
     printf(C_OWNER "owner:       buying a new car" C_NORMAL "\n");
     printf(C_OWNER "owner:       finished" C_NORMAL "\n");
 
