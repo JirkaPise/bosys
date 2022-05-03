@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    //
+
     // create owner thread
     if (pthread_create(&tid_owner, NULL, owner, NULL)) {
         perror("pthread_create: cashier");
