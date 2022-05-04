@@ -1,18 +1,18 @@
-#kompilátor
+# compiler
 CC = gcc
 
-# přepínače pro kompilátor
+# switches for compiler
 CFLAGS = -Wall -pthread -D_GNU_SOURCE
-# -Wall - vypisovat všechna varování
-# -pthread -
-# -D_GNU_SOURCE -
+# -Wall - print all warnings
+# -pthread - adds support for multithreading with the pthreads library
+# -D_GNU_SOURCE - adds support for GNU extension functions
 
 tickets_solved: tickets_solved.c
 	$(CC) $(CFLAGS) tickets_solved.c -o tickets_solved
-# $(CC) - gcc jako kompolátor
-# &(CFLAGS) - přidá přepínače pro kompilátor
-# -o - nastavení názvu výstupního souboru
+# $(CC) - gcc as compiler
+# &(CFLAGS) - adds switches for compiler
+# -o - sets file name
 
 clean:
 	rm tickets_solved
-# rm - remove název_souboru
+# rm - remove file_name
