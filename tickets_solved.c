@@ -56,16 +56,16 @@ volatile int paid_tickets = 0;    // number of already paid tickets
 sem_t semCashier;
 sem_t semOwner;
 pthread_barrier_t barrierSyncStart;
-pthread_mutex_t mutexIds;
 pthread_mutex_t mutexCustomer;
+pthread_mutex_t mutexPaidTickets;
 
 // release all allocated resources, used in atexit(3)
 void release_resources(void) {
     sem_destroy(&semCashier);
     sem_destroy(&semOwner);
     pthread_barrier_destroy(&barrierSyncStart);
-    pthread_mutex_destroy(&mutexIds);
     pthread_mutex_destroy(&mutexCustomer);
+    pthread_mutex_destroy(&mutexPaidTickets);
 }
 
 // synchronize start of all threads
@@ -108,9 +108,9 @@ void *customer(int *my_id) {
     printf(C_CUSTOMER "customer %2d: sending payment for the ticket id %d" C_NORMAL "\n", *my_id, ticket);
 
     //increase number of already paid tickets
-    pthread_mutex_lock(&mutexCustomer);
+    pthread_mutex_lock(&mutexPaidTickets);
     paid_tickets++;
-    pthread_mutex_unlock(&mutexCustomer);
+    pthread_mutex_unlock(&mutexPaidTickets);
 
     //all tickets paid, cashier can start accounting money
     if(paid_tickets == tickets){
@@ -174,8 +174,8 @@ int main(int argc, char *argv[]) {
     sem_init(&semCashier, 0, 0);
     sem_init(&semOwner, 0, 0);
     pthread_barrier_init(&barrierSyncStart, NULL, customers + 2);
-    pthread_mutex_init(&mutexIds, NULL);
     pthread_mutex_init(&mutexCustomer, NULL);
+    pthread_mutex_init(&mutexPaidTickets, NULL);
 
     pthread_t tid_owner;
     pthread_t tid_cashier;
@@ -216,16 +216,13 @@ int main(int argc, char *argv[]) {
     }
 
     // create customer threads
-    pthread_mutex_lock(&mutexIds);
     for (c = 0; c < customers; ++c) {
         customer_ids[c] = c + 1;
-        pthread_mutex_unlock(&mutexIds);
         if (pthread_create(&tid_customers[c], NULL, (void *(*)(void *)) customer, &customer_ids[c])) {
             perror("pthread_create: customer");
             return EXIT_FAILURE;
         }
     }
-
     // join all threads: customers, cashier, owner
     for (c = 0; c < customers; ++c) {
         (void) pthread_join(tid_customers[c], NULL);
