@@ -113,7 +113,7 @@ void *customer(int *my_id) {
     pthread_mutex_unlock(&mutexPaidTickets);
 
     //all tickets paid, cashier can start accounting money
-    if(paid_tickets == tickets){
+    if(paid_tickets == tickets || paid_tickets == customers){
         sem_post(&semCashier);
     }
 
@@ -171,12 +171,6 @@ void *owner(void *arg) {
 
 // main thread function
 int main(int argc, char *argv[]) {
-    sem_init(&semCashier, 0, 0);
-    sem_init(&semOwner, 0, 0);
-    pthread_barrier_init(&barrierSyncStart, NULL, customers + 2);
-    pthread_mutex_init(&mutexCustomer, NULL);
-    pthread_mutex_init(&mutexPaidTickets, NULL);
-
     pthread_t tid_owner;
     pthread_t tid_cashier;
     pthread_t tid_customers[MAX_CUSTOMERS];
@@ -202,6 +196,12 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    sem_init(&semCashier, 0, 0);
+    sem_init(&semOwner, 0, 0);
+    pthread_mutex_init(&mutexCustomer, NULL);
+    pthread_mutex_init(&mutexPaidTickets, NULL);
+    pthread_barrier_init(&barrierSyncStart, NULL, customers + 2);
 
     // create owner thread
     if (pthread_create(&tid_owner, NULL, owner, NULL)) {
