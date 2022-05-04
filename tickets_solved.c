@@ -51,6 +51,7 @@ int customers = 13;            // the number of customers
 
 volatile int reservations[MAX_TICKETS];    // owner of each ticket, 0 = no owner
 volatile int reservation_attempts = 0;    // number of finished reservation attempts
+volatile int paid_tickets = 0;    // number of already paid tickets
 
 sem_t semCashier;
 sem_t semOwner;
@@ -78,15 +79,16 @@ void *customer(int *my_id) {
 
     sync_threads();    // synchronized start
     // printf(C_CUSTOMER "customer %2d: started" C_NORMAL "\n", *my_id);
+    pthread_mutex_lock(&mutexCustomer);
     for (ticket = 0; ticket < tickets; ++ticket) {    // find the first non-reserved ticket
         if (0 == reservations[ticket]) {
-            pthread_mutex_lock(&mutexCustomer);
             reservations[ticket] = *my_id;    // reserve
             pthread_mutex_unlock(&mutexCustomer);
             printf(C_CUSTOMER "customer %2d: reserved the ticket id %d" C_NORMAL "\n", *my_id, ticket);
             break;
         }
     }
+    pthread_mutex_unlock(&mutexCustomer);
 
     if (ticket >= tickets) {
         fprintf(stderr, C_CUSTOMER_ERR "customer %2d: failed to reserve a ticket" C_NORMAL "\n", *my_id);
@@ -101,8 +103,19 @@ void *customer(int *my_id) {
     if (ticket >= tickets) {
         return NULL;
     }
+
     // reservation was successful, buy reserved ticket
     printf(C_CUSTOMER "customer %2d: sending payment for the ticket id %d" C_NORMAL "\n", *my_id, ticket);
+
+    //increase number of already paid tickets
+    pthread_mutex_lock(&mutexCustomer);
+    paid_tickets++;
+    pthread_mutex_unlock(&mutexCustomer);
+
+    //all tickets paid, cashier can start accounting money
+    if(paid_tickets == tickets){
+        sem_post(&semCashier);
+    }
 
     return NULL;
 }
@@ -160,7 +173,7 @@ void *owner(void *arg) {
 int main(int argc, char *argv[]) {
     sem_init(&semCashier, 0, 0);
     sem_init(&semOwner, 0, 0);
-    pthread_barrier_init(&barrierSyncStart, NULL, 15);
+    pthread_barrier_init(&barrierSyncStart, NULL, customers + 2);
     pthread_mutex_init(&mutexIds, NULL);
     pthread_mutex_init(&mutexCustomer, NULL);
 
@@ -217,7 +230,6 @@ int main(int argc, char *argv[]) {
     for (c = 0; c < customers; ++c) {
         (void) pthread_join(tid_customers[c], NULL);
     }
-    sem_post(&semCashier);
     (void) pthread_join(tid_cashier, NULL);
     (void) pthread_join(tid_owner, NULL);
     // Errors not checked, reasons why error cannot happen:
